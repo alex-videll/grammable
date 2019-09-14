@@ -131,7 +131,6 @@ RSpec.describe GramsController, type: :controller do
     end
   end
 
-
   describe "grams#new action" do
     it "should require users to be logged in" do
       get :new

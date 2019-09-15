@@ -1,6 +1,33 @@
 require 'rails_helper'
 
 RSpec.describe GramsController, type: :controller do
+	describe "comments#create action" do
+		it "should allow users to create comments on grams" do 
+			gram = FactoryBot.create(:gram)
+
+			user = FactoryBot.create(:user)
+			sign_in user
+
+			post :create, params: { gram_id: gram.id, comment: { message: 'awesome gram' } }
+
+			expect(response).to redirect_to root_path
+			expect(grams.comments.length).to eq 1
+			expect(gram.comments.first.message).to eq 'awesome gram'
+		end
+
+		it "should require a user to be logged in to comment on a gram" do
+			gram = FactoryBot.create(:gram)
+			post :create, params: { gram_id: gram.id, comment: { message: 'awesome gram' } }
+			expect(response).to redirect_to new_user_session_path
+		end
+
+		it "should return http status code of not found if the gram isn't found" do 
+			user = FactoryBot.create(:user)
+			sign_in user
+			post :create, params: { gram_id: 'YOLOSWAG', comment: { message: 'awesome gram' } }
+			expect(response).to have_http_status :not_found
+		end
+	end
 
 	describe "grams#destroy action" do
 		it "shouldn't allow users who didn't create the gram to destroy a gram" do 
@@ -155,16 +182,22 @@ RSpec.describe GramsController, type: :controller do
     end
 
     it "should successfully create a new gram in our database" do
-      user = FactoryBot.create(:user)
-      sign_in user
+  		user = FactoryBot.create(:user)
+  		sign_in user
 
-      post :create, params: { gram: { message: 'Hello!' } }
-      expect(response).to redirect_to root_path
+  		post :create, params: {
+    		gram: {
+      			message: 'Hello!',
+      			picture: fixture_file_upload("/picture.png", 'image/png')
+    		}
+  		}
 
-      gram = Gram.last
-      expect(gram.message).to eq("Hello!")
-      expect(gram.user).to eq(user)
-    end
+  		expect(response).to redirect_to root_path
+
+  		gram = Gram.last
+  		expect(gram.message).to eq("Hello!")
+  		expect(gram.user).to eq(user)
+	end
 
     it "should properly deal with validation errors" do
       user = FactoryBot.create(:user)
